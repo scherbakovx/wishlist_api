@@ -7,8 +7,8 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo"
-	"github.com/scherbakovx/wishlist_bot/app/db"
-	"github.com/scherbakovx/wishlist_bot/app/models"
+	"github.com/scherbakovx/wishlist_api/app/db"
+	"github.com/scherbakovx/wishlist_api/app/models"
 
 	"gorm.io/gorm"
 )

@@ -1,11 +1,11 @@
-package api_db
+package db
 
 import (
 	"fmt"
 	"log"
 	"os"
 
-	models "github.com/scherbakovx/wishlist_api/app/api_models"
+	"github.com/scherbakovx/wishlist_api/app/models"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
