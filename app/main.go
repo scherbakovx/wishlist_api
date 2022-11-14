@@ -1,17 +1,27 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net/http"
 	"strconv"
+	"time"
 
 	"github.com/joho/godotenv"
 	"github.com/labstack/echo"
 	"github.com/scherbakovx/wishlist_api/app/db"
 	"github.com/scherbakovx/wishlist_api/app/models"
+	"github.com/scherbakovx/wishlist_bot/app/utils"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
+
+var client = &http.Client{
+	Timeout: 30 * time.Second,
+}
+
+const successfulMessage string = "Added!"
 
 func main() {
 
@@ -26,6 +36,8 @@ func main() {
 	})
 	e.GET("/wishes", wishes)
 	e.GET("/update_user_status", updateUserStatus)
+	e.GET("/get_user_wish", getUserWish)
+	e.GET("/add_wish_to_user", addWishToUser)
 	e.Logger.Fatal(e.Start(":3000"))
 }
 
@@ -78,4 +90,68 @@ func updateUserStatus(c echo.Context) error {
 	database.Save(user)
 
 	return c.String(http.StatusOK, answer)
+}
+
+func getUserWish(c echo.Context) error {
+
+	user_id := c.QueryParam("user_id")
+
+	var database *gorm.DB = db.Init()
+
+	var wish models.LocalWish
+	result := database.Clauses(clause.OnConflict{DoNothing: true}).Model(&models.LocalWish{}).Joins("JOIN users ON local_wishes.user_id = users.id").Where("users.chat_id = ?", user_id).First(&wish)
+	if result.Error != nil {
+		if result.Error.Error() == "record not found" {
+			return c.String(http.StatusOK, fmt.Sprintf("User %v has no wishes :(", user_id))
+		} else {
+			panic(result.Error)
+		}
+	} else {
+		return c.String(http.StatusOK, wish.String())
+	}
+
+	// if uh.User.AirTable.Board != "" {
+	// 	randomObjectData, err := airtable.GetDataFromAirTable(client, randomizer)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// 	return c.String(http.StatusOK, randomObjectData)
+	// }
+}
+
+func addWishToUser(c echo.Context) error {
+
+	chat_id := c.QueryParam("chat_id")
+
+	var database *gorm.DB = db.Init()
+
+	user, err := db.GetOrCreateUserInDB(database, chat_id)
+	if err != nil {
+		panic(err)
+	}
+
+	link := c.QueryParam("link")
+
+	// if uh.User.AirTable.Board != "" {
+	// 	err := airtable.InsertDataToAirTable(client, link)
+	// 	if err != nil {
+	// 		panic(err)
+	// 	}
+	// } else {
+	openGraphData, _ := utils.GetOGTags(client, link)
+	wish := models.LocalWish{
+		Wish: models.Wish{
+			Name: openGraphData.Title,
+			Link: openGraphData.URL,
+		},
+		UserId: user.Id,
+	}
+	result := database.Create(&wish)
+
+	if result.Error != nil {
+		panic(result.Error)
+	}
+
+	return c.String(http.StatusOK, successfulMessage)
+
 }
