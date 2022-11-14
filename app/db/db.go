@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 
 	"github.com/scherbakovx/wishlist_api/app/models"
 	"gorm.io/driver/postgres"
@@ -31,8 +32,9 @@ func Init() *gorm.DB {
 	return db
 }
 
-func GetOrCreateUserInDB(db *gorm.DB, chatId int64) (*models.User, error) {
-	user := models.User{ChatId: int64(chatId)}
+func GetOrCreateUserInDB(db *gorm.DB, chatId string) (*models.User, error) {
+	intChatId, _ := strconv.Atoi(chatId)
+	user := models.User{ChatId: int64(intChatId)}
 	result := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&user)
 
 	if result.Error != nil {

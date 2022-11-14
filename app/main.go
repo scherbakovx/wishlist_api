@@ -68,7 +68,7 @@ func updateUserStatus(c echo.Context) error {
 		answer = "Your status is Reader — just send me contact card or nickname and I'll be ready to give you advice :)"
 	}
 
-	var user models.User
+	var user *models.User
 	user, err = db.GetOrCreateUserInDB(database, user_id)
 	if err != nil {
 		panic(err)
